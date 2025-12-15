@@ -14,30 +14,31 @@ jobs:
       with:
         python-version: '3.11'
     
-    - name: Install dependencies
+    - name: Install all dependencies
       run: |
-        pip install pytest python-docx pdfplumber
+        pip install pytest python-docx pdfplumber requests python-dotenv gigachat
         
     - name: Run tests
       run: |
+        export PYTHONPATH=$PWD/src:$PYTHONPATH
         python -m pytest tests/ -v
         
     - name: Test CLI
       run: |
-        # Создаем тестовый файл
+        export PYTHONPATH=$PWD/src:$PYTHONPATH
         python -c "from docx import Document; d=Document(); d.add_paragraph('Test'); d.save('test.docx')"
         
-        # Запускаем аннотатор
-        python src/cli.py --files test.docx --provider mock --out-dir test_out
+
+        cd src
+        python cli.py --files ../test.docx --provider mock --out-dir ../test_out
         
-        # Проверяем результат
-        if [ -f "test_out/annotations.docx" ]; then
+
+        if [ -f "../test_out/annotations.docx" ]; then
           echo "✅ CLI works correctly"
         else
           echo "❌ CLI failed"
           exit 1
         fi
-        
-        # Убираем за собой
-        rm -f test.docx
-        rm -rf test_out
+
+        rm -f ../test.docx
+        rm -rf ../test_out
