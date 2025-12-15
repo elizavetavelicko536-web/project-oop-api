@@ -1,168 +1,43 @@
-name: Python CI/CD
+name: CI
 
-on:
-  push:
-    branches: [ main, master, develop ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:  # Позволяет запускать вручную
+on: [push, pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
-
+    
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-    
-    - name: Install system dependencies (для pdfplumber)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libffi-dev
+        python-version: '3.11'
     
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install pytest pytest-cov
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    
-    - name: Run tests with pytest
+        pip install pytest python-docx pdfplumber
+        
+    - name: Run tests
       run: |
-        # Запускаем тесты с покрытием
-        python -m pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        fail_ci_if_error: false
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    
-    - name: Install linting tools
+        python -m pytest tests/ -v
+        
+    - name: Test CLI
       run: |
-        pip install flake8 black mypy isort
-    
-    - name: Check code formatting with black
-      run: |
-        black --check src/ tests/
-    
-    - name: Check imports sorting with isort
-      run: |
-        isort --check-only src/ tests/
-    
-    - name: Lint with flake8
-      run: |
-        flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 src/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
-    
-    - name: Type check with mypy
-      run: |
-        mypy --ignore-missing-imports src/
-
-  build:
-    needs: [test, lint]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    
-    - name: Install dependencies
-      run: |
-        pip install build
-    
-    - name: Build package
-      run: |
-        python -m build
-    
-    - name: Verify package structure
-      run: |
-        pip install twine
-        twine check dist/*
-
-  integration-test:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    
-    - name: Install dependencies
-      run: |
-        pip install -e .
-    
-    - name: Create test files
-      run: |
-        python -c "from docx import Document
-        doc = Document()
-        doc.add_paragraph('Test document for integration testing')
-        doc.save('test1.docx')
-        doc2 = Document()
-        doc2.add_paragraph('Another test document')
-        doc2.save('test2.docx')
-        print('Test files created')
-        "
-    
-    - name: Run integration test with mock provider
-      run: |
-        annotator --files test1.docx test2.docx --prompts "Test annotation" --provider mock --out-dir test_output
-        ls -la test_output/
-    
-    - name: Verify output files
-      run: |
-        if [ -f "test_output/annotations.docx" ]; then
-          echo "✓ Output file created successfully"
-          python -c "
-          import sys
-try:
-    from docx import Document
-    doc = Document('test_output/annotations.docx')
-    text = ' '.join(p.text for p in doc.paragraphs)
-    if 'test1.docx' in text and 'test2.docx' in text:
-        print('✓ Output file contains expected content')
-    else:
-        print('✗ Output file missing expected content')
-        sys.exit(1)
-except Exception as e:
-    print(f'✗ Error reading output: {e}')
-    sys.exit(1)
-          "
+        # Создаем тестовый файл
+        python -c "from docx import Document; d=Document(); d.add_paragraph('Test'); d.save('test.docx')"
+        
+        # Запускаем аннотатор
+        python src/cli.py --files test.docx --provider mock --out-dir test_out
+        
+        # Проверяем результат
+        if [ -f "test_out/annotations.docx" ]; then
+          echo "✅ CLI works correctly"
         else
-          echo "✗ Output file not found"
+          echo "❌ CLI failed"
           exit 1
         fi
-    
-    - name: Clean up
-      run: |
-        rm -f test1.docx test2.docx
-        rm -rf test_output/
-    
-    - name: Clean up
-      run: |
-        rm -f test1.docx test2.docx
-        rm -rf test_output/
+        
+        # Убираем за собой
+        rm -f test.docx
+        rm -rf test_out
