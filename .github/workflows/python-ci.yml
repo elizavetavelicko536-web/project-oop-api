@@ -162,3 +162,8 @@ except Exception as e:
       run: |
         rm -f test1.docx test2.docx
         rm -rf test_output/
+    
+    - name: Clean up
+      run: |
+        rm -f test1.docx test2.docx
+        rm -rf test_output/
