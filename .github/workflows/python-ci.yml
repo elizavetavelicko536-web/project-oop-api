@@ -138,7 +138,7 @@ jobs:
         if [ -f "test_output/annotations.docx" ]; then
           echo "✓ Output file created successfully"
           python -c "
-import sys
+          import sys
 try:
     from docx import Document
     doc = Document('test_output/annotations.docx')
