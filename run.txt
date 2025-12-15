@@ -1,0 +1,18 @@
+# Запуск с Mock провайдером
+python src/cli.py --files test.docx --prompts "Сделай аннотацию" --provider mock --out-dir results
+
+python src/cli.py --files test1.docx test3.docx --prompts "Опиши основные особенности" "Какие применения у этой технологии" --provider mock
+
+python src/cli.py --files test1.docx test3.docx --prompts "Сделай аннотацию на 3-4 предложения" --provider mock
+
+# Запуск с GigaChat
+python src/cli.py --files Development_of_a_Graphical_Configurator_for_Networks_on_a_Chip.pdf --prompts "Сделай аннотацию" --provider gigachat --out-dir results
+
+python src/cli.py --files test1.docx test3.docx --prompts "Опиши основные особенности" "Какие применения у этой технологии" --provider gigachat
+
+python src/cli.py --files test1.docx test3.docx --prompts "Сделай аннотацию на 3-4 предложения" --provider gigachat
+
+python src/cli.py --files test1.docx test3.docx --prompts "Аннотируй" "Суммаризируй" --provider gigachat  --combine
+
+#help
+python src/cli.py --help
