@@ -118,15 +118,14 @@ jobs:
     
     - name: Create test files
       run: |
-        python -c "
-from docx import Document
-doc = Document()
-doc.add_paragraph('Test document for integration testing')
-doc.save('test1.docx')
-doc2 = Document()
-doc2.add_paragraph('Another test document')
-doc2.save('test2.docx')
-print('Test files created')
+        python -c "from docx import Document
+        doc = Document()
+        doc.add_paragraph('Test document for integration testing')
+        doc.save('test1.docx')
+        doc2 = Document()
+        doc2.add_paragraph('Another test document')
+        doc2.save('test2.docx')
+        print('Test files created')
         "
     
     - name: Run integration test with mock provider
